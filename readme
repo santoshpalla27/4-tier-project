@@ -1,0 +1,66 @@
+The status indicators are color-coded:
+
+Green (online) - Component is working correctly
+Red (offline) - Component is down
+Orange (checking) - Status is being checked
+Gray (unknown) - Status cannot be determined (typically when the backend is unavailable)
+
+
+
+PM2_DB_HOST=database.cnwcymm6otu4.us-east-1.rds.amazonaws.com \
+PM2_DB_USER=admin \
+PM2_DB_PASSWORD=admin123 \
+PM2_DB_NAME=project \
+PM2_DB_PORT=3306 \
+PM2_ENVIRONMENT=production \
+PM2_APP_VERSION=1.0.0 \
+PM2_REDIS_HOST=10.0.6.97 \
+PM2_REDIS_PORT=6379 \
+PM2_REDIS_PASSWORD=santosh \
+pm2 restart backend --update-env
+
+vi /opt/myapp/.env
+# Application settings
+PORT=3000
+ENVIRONMENT=production
+APP_VERSION=1.0.0
+NODE_ENV=production
+
+# Database settings
+DB_HOST=database.cnwcymm6otu4.us-east-1.rds.amazonaws.com
+DB_PORT=3306
+DB_USER=admin
+DB_PASSWORD=admin123
+DB_NAME=project
+
+# Redis cache settings
+REDIS_HOST=10.0.6.97
+REDIS_PORT=6379
+REDIS_PASSWORD=santosh
+REDIS_TLS=false
+
+# Logging settings
+LOG_LEVEL=info
+
+
+
+
+curl http://localhost:3000/api/health
+
+run in backend server
+
+
+
+# Replace the backend URL directly in the configuration file
+sudo sed -i 's/set $backend_url "your-backend-address";/set $backend_url "10.0.5.106";/g' /etc/nginx/conf.d/myapp.conf
+
+# Update environment if needed
+sudo sed -i 's/set $environment "development";/set $environment "production";/g' /etc/nginx/conf.d/myapp.conf
+
+# Update app version if needed
+sudo sed -i 's/set $app_version "1.0.0";/set $app_version "1.0.1";/g' /etc/nginx/conf.d/myapp.conf
+
+# Restart Nginx to apply changes
+sudo systemctl restart nginx
+
+
