@@ -1,0 +1,108 @@
+---
+- name: Setup frotend nginx with ansible
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Install gcc, make, wget, and systemd-devel packages
+      dnf:
+        name:
+          - gcc
+          - make
+          - wget
+          - systemd-devel
+        state: present
+
+    - name: Create temp directory
+      file:
+        path: /tmp/redis-build
+        state: directory
+        mode: '0755'
+
+    - name: Download Redis stable release
+      get_url:
+        url: https://download.redis.io/redis-stable.tar.gz
+        dest: /tmp/redis-build/redis-stable.tar.gz
+        mode: '0644'
+
+    - name: Extract Redis archive
+      unarchive:
+        src: /tmp/redis-build/redis-stable.tar.gz
+        dest: /tmp/redis-build/
+        remote_src: yes  # The archive is on the remote system
+
+    - name: Build Redis from source
+      command:
+        cmd: make
+        chdir: /tmp/redis-build/redis-stable
+      register: make_result
+      changed_when: make_result.rc == 0
+
+    - name: Install Redis
+      command:
+        cmd: make install
+        chdir: /tmp/redis-build/redis-stable
+      become: yes 
+      register: install_result
+      changed_when: install_result.rc == 0
+
+
+    - name: Create Redis system group
+      group:
+        name: redis
+        system: yes
+        state: present
+          
+    - name: Create Redis system user
+      user:
+        name: redis
+        system: yes
+        group: redis
+        create_home: no
+        
+    - name: Create Redis directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: redis
+        group: redis
+        mode: '0755'
+      loop:
+        - /etc/redis
+        - /var/lib/redis
+        - /var/log/redis
+        
+
+    - name: Copy Redis configuration file
+      copy:
+        src: /tmp/redis-build/redis-stable/redis.conf
+        dest: /etc/redis/redis.conf
+        remote_src: yes
+        owner: redis
+        group: redis
+        mode: '0644'
+        
+    - name: Configure Redis
+      lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^supervised no', line: 'supervised systemd' }
+        - { regexp: '^dir \./', line: 'dir /var/lib/redis/' }
+        - { regexp: '^bind 127.0.0.1', line: 'bind 0.0.0.0' }
+        - { regexp: '# requirepass foobared', line: 'requirepass santosh' }
+        - { regexp: '^# maxmemory <bytes>', line: 'maxmemory 256mb' }
+        - { regexp: '^# maxmemory-policy noeviction', line: 'maxmemory-policy allkeys-lru' }
+        - { regexp: '^logfile ""', line: 'logfile /var/log/redis/redis.log' }
+
+
+    - name: Start Redis server
+      command:
+        cmd: redis-server /etc/redis/redis.conf --daemonize yes
+      become: yes
+      become_user: redis  # Run as the redis user
+      register: redis_start_result
+      
+    - name: Display Redis server start status
+      debug:
+        msg: "Redis server started in daemon mode"

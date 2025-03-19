@@ -51,14 +51,14 @@ run in backend server
 
 
 
-# Replace the backend URL directly in the configuration file
-sudo sed -i 's/set $backend_url "your-backend-address";/set $backend_url "10.0.5.106";/g' /etc/nginx/conf.d/myapp.conf
+# Update backend URL
+sudo sed -i 's/set $backend_url "${BACKEND_URL}";/set $backend_url "10.0.5.185";/g' /etc/nginx/conf.d/myapp.conf
 
-# Update environment if needed
-sudo sed -i 's/set $environment "development";/set $environment "production";/g' /etc/nginx/conf.d/myapp.conf
+# Update environment
+sudo sed -i 's/set $environment "${ENVIRONMENT}";/set $environment "production";/g' /etc/nginx/conf.d/myapp.conf
 
-# Update app version if needed
-sudo sed -i 's/set $app_version "1.0.0";/set $app_version "1.0.1";/g' /etc/nginx/conf.d/myapp.conf
+# Update app version
+sudo sed -i 's/set $app_version "${APP_VERSION}";/set $app_version "1.0.1";/g' /etc/nginx/conf.d/myapp.conf
 
 # Restart Nginx to apply changes
 sudo systemctl restart nginx

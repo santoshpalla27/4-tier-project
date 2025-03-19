@@ -10,6 +10,66 @@ module "vpc" {
   availability_zone = ["us-east-1a", "us-east-1b"] 
 }
 
+# IAM Role for EC2 to describe EC2 instances
+resource "aws_iam_role" "ec2_describe_role" {
+  name = "ec2-describe-instances-role"
+  
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "EC2-Describe-Instances-Role"
+  }
+}
+
+# Policy allowing EC2 instances to describe other EC2 instances
+resource "aws_iam_policy" "ec2_describe_policy" {
+  name        = "ec2-describe-instances-policy"
+  description = "Allow EC2 instances to describe other EC2 instances"
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:DescribeTags"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Attach the policy to the role
+resource "aws_iam_role_policy_attachment" "ec2_describe_policy_attach" {
+  role       = aws_iam_role.ec2_describe_role.name
+  policy_arn = aws_iam_policy.ec2_describe_policy.arn
+}
+
+# Create the instance profile
+resource "aws_iam_instance_profile" "ec2_describe_profile" {
+  name = "ec2-describe-instances-profile"
+  role = aws_iam_role.ec2_describe_role.name
+}
+
+# Output the instance profile name (to use when launching instances)
+output "instance_profile_name" {
+  value = aws_iam_instance_profile.ec2_describe_profile.name
+}
+
+
 module "ec2-frotend" {
   source = "./ec2"
   ami = "ami-08b5b3a93ed654d19"
@@ -22,6 +82,7 @@ module "ec2-frotend" {
               #!/bin/bash
               echo "Hello, World" > index.html  
               EOF
+  instance_profile_name = aws_iam_instance_profile.ec2_describe_profile.name
 }
 
 module "ec2-backend" {
@@ -36,6 +97,7 @@ module "ec2-backend" {
               #!/bin/bash
               echo "Hello, World" > index.html  
               EOF
+   instance_profile_name = aws_iam_instance_profile.ec2_describe_profile.name
 }
 
 module "cache-ec2" {

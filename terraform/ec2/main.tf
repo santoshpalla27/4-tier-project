@@ -8,4 +8,5 @@ resource "aws_instance" "aws_instance" {
         Name = "${var.name} Instance"
     }
     user_data = var.user_data
+    iam_instance_profile = var.instance_profile_name
 }

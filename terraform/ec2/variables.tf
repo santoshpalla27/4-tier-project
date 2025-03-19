@@ -34,3 +34,9 @@ variable "user_data" {
     description = "The user data to provide when launching the instance"
     type        = string
 }
+
+variable "instance_profile_name" {
+    description = "The name of the instance profile to use for the instance"
+    type        = string 
+    default = ""
+}
