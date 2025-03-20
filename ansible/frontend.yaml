@@ -25,6 +25,7 @@
         repo: https://github.com/santoshpalla27/4-tier-project.git
         dest: /root/4-tier-project
         version: main 
+        force: yes
         clone: yes
         update: yes  
 
@@ -69,7 +70,8 @@
 
     - name: Extract private IPs from backend instances
       ansible.builtin.set_fact:
-        backend_ips: "{{ backend_instances.instances | map(attribute='private_ip_address') | list }}"
+        backend_ips: "{{ backend_instances.instances | map(attribute='private_ip_address', default='') | select('string') | reject('equalto', '') | list }}"
+      when: backend_instances.instances is defined and backend_instances.instances | length > 0
 
     - name: Print backend private IPs
       ansible.builtin.debug:
