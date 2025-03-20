@@ -80,6 +80,7 @@ module "ec2-frotend" {
   security_group_id = module.vpc.frotend_sg_security_groups
   subnet_id = module.vpc.public_subnet_ids[0]
   name = "frotend"
+  depends_on = [ module.ec2-backend ]
   user_data = <<-EOF
               #!/bin/bash
               sudo yum install ansible git -y
@@ -98,6 +99,7 @@ module "ec2-backend" {
   security_group_id = module.vpc.backend_sg_security_groups
   subnet_id = module.vpc.private_subnet_ids[0]
   name = "backend"
+  depends_on = [ aws_db_instance.database , module.cache-ec2 ]
   user_data = <<-EOF
               #!/bin/bash
               sudo yum install ansible git -y
