@@ -44,7 +44,9 @@ resource "aws_iam_policy" "ec2_describe_policy" {
         Effect = "Allow"
         Action = [
           "ec2:DescribeInstances",
-          "ec2:DescribeTags"
+          "ec2:DescribeTags",
+          "rds:DescribeDBInstances",
+          "rds:DescribeDBClusters"
         ]
         Resource = "*"
       }
@@ -80,7 +82,10 @@ module "ec2-frotend" {
   name = "frotend"
   user_data = <<-EOF
               #!/bin/bash
-              echo "Hello, World" > index.html  
+              sudo yum install ansible git -y
+              git clone https://github.com/santoshpalla27/4-tier-project.git
+              cd 4-tier-project/ansible
+              /usr/bin/ansible-playbook frontend.yaml
               EOF
   instance_profile_name = aws_iam_instance_profile.ec2_describe_profile.name
 }
@@ -95,7 +100,10 @@ module "ec2-backend" {
   name = "backend"
   user_data = <<-EOF
               #!/bin/bash
-              echo "Hello, World" > index.html  
+              sudo yum install ansible git -y
+              git clone https://github.com/santoshpalla27/4-tier-project.git
+              cd 4-tier-project/ansible
+              /usr/bin/ansible-playbook backend.yaml 
               EOF
    instance_profile_name = aws_iam_instance_profile.ec2_describe_profile.name
 }
@@ -110,7 +118,10 @@ module "cache-ec2" {
   name = "cache"
   user_data = <<-EOF
               #!/bin/bash
-              echo "Hello, World" > index.html  
+              sudo yum install ansible git -y
+              git clone https://github.com/santoshpalla27/4-tier-project.git
+              cd 4-tier-project/ansible
+              /usr/bin/ansible-playbook redis.yaml
               EOF
 }
 

@@ -18,51 +18,10 @@
       ansible.builtin.git:
         repo: https://github.com/santoshpalla27/4-tier-project.git
         dest: /root/4-tier-project
+        force: yes
         version: main 
         clone: yes
         update: yes  
-
-    - name: Run npm install in backend directory
-      shell: npm install
-      args:
-        chdir: /root/4-tier-project/code/backend
-
-    - name: Run npm install in backend directory
-      shell: sudo npm install -g pm2
-      args:
-        chdir: /root/4-tier-project/code/backend
-
-    - name: Setup PM2 startup script
-      shell: |
-        pm2 startup
-        env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
-      args:
-        chdir: /root/4-tier-project/code/backend
-
-
-    - name: Check if backend app is already running
-      shell: pm2 list | grep -w "backend"
-      args:
-        chdir: /root/4-tier-project/code/backend
-      register: pm2_check
-      ignore_errors: yes
-
-    - name: Stop the existing backend app if running
-      shell: pm2 stop backend
-      args:
-        chdir: /root/4-tier-project/code/backend
-      when: pm2_check.rc == 0
-      ignore_errors: yes
-
-    - name: Start application with PM2
-      shell: pm2 start app.js --name "backend"
-      args:
-        chdir: /root/4-tier-project/code/backend
-        
-    - name: Save PM2 configuration
-      shell: pm2 save
-      args:
-        chdir: /root/4-tier-project/code/backend
 
     - name: Query RDS database instances
       shell: >
@@ -110,10 +69,6 @@
         backend_ips: "{{ running_instances | map(attribute='private_ip_address') | select('defined') | list }}"
       when: running_instances | length > 0
 
-    - name: Print Redis instance private IPs
-      ansible.builtin.debug:
-        var: backend_ips
-        verbosity: 0
     
     - name: Update DB_HOST in .env file
       ansible.builtin.shell: >
@@ -125,12 +80,45 @@
         sed -i 's|^REDIS_HOST=.*|REDIS_HOST={{ backend_ips[0] }}|' /root/4-tier-project/code/backend/.env
       when: backend_ips is defined and backend_ips | length > 0
 
-    - name: Verify .env file after updates
-      ansible.builtin.shell: cat /root/4-tier-project/code/backend/.env
-      register: env_content
-      changed_when: false
+    - name: Run npm install in backend directory
+      shell: npm install
+      args:
+        chdir: /root/4-tier-project/code/backend
 
-    - name: Display updated .env file
-      ansible.builtin.debug:
-        var: env_content.stdout_lines
+    - name: Run npm install in backend directory
+      shell: sudo npm install -g pm2
+      args:
+        chdir: /root/4-tier-project/code/backend
+
+    - name: Setup PM2 startup script
+      shell: |
+        pm2 startup
+        env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+      args:
+        chdir: /root/4-tier-project/code/backend
+
+
+    - name: Check if backend app is already running
+      shell: pm2 list | grep -w "backend"
+      args:
+        chdir: /root/4-tier-project/code/backend
+      register: pm2_check
+      ignore_errors: yes
+
+    - name: Stop the existing backend app if running
+      shell: pm2 stop backend
+      args:
+        chdir: /root/4-tier-project/code/backend
+      when: pm2_check.rc == 0
+      ignore_errors: yes
+
+    - name: Start application with PM2
+      shell: pm2 start app.js --name "backend"
+      args:
+        chdir: /root/4-tier-project/code/backend
+        
+    - name: Save PM2 configuration
+      shell: pm2 save
+      args:
+        chdir: /root/4-tier-project/code/backend
       
