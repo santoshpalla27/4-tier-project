@@ -179,7 +179,7 @@ resource "aws_security_group" "cache_sg" {
 
   ingress {
     from_port       = 6379
-    to_port         = 6379
+    to_port         = 6382
     protocol        = "tcp"
     cidr_blocks     = ["0.0.0.0/0"]
   }
@@ -187,6 +187,13 @@ resource "aws_security_group" "cache_sg" {
   ingress {
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  ingress {
+    from_port   = 16379
+    to_port     = 16382
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

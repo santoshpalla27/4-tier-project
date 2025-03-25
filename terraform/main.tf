@@ -112,12 +112,14 @@ module "ec2-backend" {
 
 module "cache-ec2" {
   source = "./ec2"
+  count = 4
   ami = "ami-08b5b3a93ed654d19"
   instance_type = "t2.micro"
   key_name = "santosh"
   security_group_id = module.vpc.cache_sg_security_groups
-  subnet_id = module.vpc.private_subnet_ids[1]
-  name = "cache"
+  subnet_id = module.vpc.private_subnet_ids[count.index % 2]
+  name = "cache${count.index}"
+  instance_profile_name = aws_iam_instance_profile.ec2_describe_profile.name
   user_data = <<-EOF
               #!/bin/bash
               sudo yum install ansible git -y

@@ -114,28 +114,34 @@ const dbPool = mysql.createPool({
   }
 });
 
-// Redis connection
+// Redis connection (cluster mode)
 let redisClient;
 try {
-  redisClient = new Redis({
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || '',
-    retryStrategy: times => Math.min(times * 50, 2000),
-    connectTimeout: 10000, // 10 seconds
-    // Added TLS support for Redis (recommended for production)
-    tls: process.env.REDIS_TLS === 'true' ? {} : undefined
+  const redisNodes = process.env.REDIS_NODES.split(',').map(node => {
+    const [host, port] = node.split(':');
+    return { host, port: parseInt(port) };
+  });
+  
+  redisClient = new Redis.Cluster(redisNodes, {
+    redisOptions: {
+      password: process.env.REDIS_PASSWORD || '',
+      connectTimeout: 10000,
+      tls: process.env.REDIS_TLS === 'true' ? {} : undefined
+    },
+    // Customize cluster behavior
+    clusterRetryStrategy: times => Math.min(times * 50, 2000),
+    scaleReads: 'all' // Read from all replicas for load balancing
   });
   
   redisClient.on('error', (err) => {
-    console.error('Redis error:', err);
+    console.error('Redis cluster error:', err);
   });
 
   redisClient.on('connect', () => {
-    console.log('Successfully connected to Redis');
+    console.log('Successfully connected to Redis cluster');
   });
 } catch (error) {
-  console.error('Redis connection error:', error);
+  console.error('Redis cluster connection error:', error);
 }
 
 // Root route

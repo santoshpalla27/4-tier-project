@@ -52,22 +52,35 @@
           - botocore
         state: present
       become: yes
-
-    - name: Fetch all Redis instances
+     
+    - name: Fetch all instance private IPs
       amazon.aws.ec2_instance_info:
-        region: us-east-1
         filters:
           "tag:Name": "cache*"
-      register: redis_instances
+        region: us-east-1  
+      register: ec2_instances
+      delegate_to: localhost
+      run_once: true
 
-    - name: Filter only running instances
-      ansible.builtin.set_fact:
-        running_instances: "{{ redis_instances.instances | selectattr('state.name', 'equalto', 'running') | list }}"
+    - name: Debug EC2 instance structure
+      debug:
+        var: ec2_instances
+      delegate_to: localhost
+      run_once: true
+      
+    - name: Extract private IPs from instances
+      set_fact:
+        instance_ips: "{{ ec2_instances.instances | json_query('[*].private_ip_address') | select('string') | list }}"
+      when: ec2_instances.instances is defined and ec2_instances.instances | length > 0
+      delegate_to: localhost
+      run_once: true
 
-    - name: Extract private IPs from running Redis instances
-      ansible.builtin.set_fact:
-        backend_ips: "{{ running_instances | map(attribute='private_ip_address') | select('defined') | list }}"
-      when: running_instances | length > 0
+
+    - name: Extract private IPs from instances
+      set_fact:
+        redis_hosts: "{{ instance_ips[0] }}:6379,{{ instance_ips[1] }}:6379,{{ instance_ips[2] }}:6379,{{ instance_ips[3] }}:6379"
+      delegate_to: localhost
+      run_once: true
 
     
     - name: Update DB_HOST in .env file
@@ -77,8 +90,8 @@
 
     - name: Update REDIS_HOST in .env file
       ansible.builtin.shell: >
-        sed -i 's|^REDIS_HOST=.*|REDIS_HOST={{ backend_ips[0] }}|' /root/4-tier-project/code/backend/.env
-      when: backend_ips is defined and backend_ips | length > 0
+        sed -i 's|^REDIS_NODES=.*|REDIS_NODES={{ redis_hosts }}|' /root/4-tier-project/code/backend/.env
+      when: redis_hosts is defined
 
     - name: Run npm install in backend directory
       shell: npm install
