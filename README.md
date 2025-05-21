@@ -1,6 +1,43 @@
-# 4-tier-project
 
-The status indicators are color-coded:
+
+4-Tier Architecture Project
+Overview
+This project implements a modern 4-tier architecture for a scalable, high-availability web application deployed on AWS. Unlike traditional 3-tier architectures, this solution adds a caching layer between the application and database tiers to improve performance and reduce database load.
+Architecture
+The architecture consists of the following tiers:
+
+Presentation Tier (Web Tier) - The user interface layer
+Application Tier (Business Logic) - Processes user requests and implements business logic
+Caching Tier (Redis) - Stores frequently accessed data to improve performance
+Data Tier (Database) - Persistent storage for application data
+
+Infrastructure Components
+
+VPC with multiple subnets across different availability zones for high availability
+Load balancers to distribute traffic across instances
+Auto Scaling Groups for the web and application tiers
+EC2 instances for hosting the web and application servers
+Redis for caching frequently accessed data
+RDS (MySQL) for the database tier
+NAT Gateway to enable internet access for instances in private subnets
+
+Prerequisites
+
+AWS Account with appropriate permissions
+AWS CLI configured with access credentials
+Terraform installed (for infrastructure provisioning)
+Git
+Basic knowledge of AWS services (EC2, VPC, ELB, RDS, Redis)
+
+
+
+
+Verify the application is running:
+curl http://localhost:3000/api/health
+
+
+Status Monitoring
+The application includes status indicators for each component:
 
 Green (online) - Component is working correctly
 Red (offline) - Component is down
@@ -9,77 +46,5 @@ Gray (unknown) - Status cannot be determined (typically when the backend is unav
 
 
 
-PM2_DB_HOST=database.cnwcymm6otu4.us-east-1.rds.amazonaws.com \
-PM2_DB_USER=admin \
-PM2_DB_PASSWORD=admin123 \
-PM2_DB_NAME=project \
-PM2_DB_PORT=3306 \
-PM2_ENVIRONMENT=production \
-PM2_APP_VERSION=1.0.0 \
-PM2_REDIS_HOST=10.0.6.240 \
-PM2_REDIS_PORT=6379 \
-PM2_REDIS_PASSWORD=santosh \
-pm2 restart backend --update-env
-
-cat > .env << EOL
-# Application settings
-PORT=3000
-ENVIRONMENT=production
-APP_VERSION=1.0.0
-NODE_ENV=production
-
-# Database settings
-DB_HOST=database.cnwcymm6otu4.us-east-1.rds.amazonaws.com
-DB_PORT=3306
-DB_USER=admin
-DB_PASSWORD=admin123
-DB_NAME=project
-
-# Redis cache settings
-REDIS_HOST=10.0.6.240
-REDIS_PORT=6379
-REDIS_PASSWORD=santosh
-
-# Logging settings
-LOG_LEVEL=info
-EOL
-
-
-
-
-curl http://localhost:3000/api/health
-
-run in backend server
-
-
-
-# Update backend URL
-sudo sed -i 's/set $backend_url "${BACKEND_URL}";/set $backend_url "10.0.5.185";/g' /etc/nginx/conf.d/myapp.conf
-
-# Update environment
-sudo sed -i 's/set $environment "${ENVIRONMENT}";/set $environment "production";/g' /etc/nginx/conf.d/myapp.conf
-
-# Update app version
-sudo sed -i 's/set $app_version "${APP_VERSION}";/set $app_version "1.0.1";/g' /etc/nginx/conf.d/myapp.conf
-
-# Restart Nginx to apply changes
-sudo systemctl restart nginx
-
-
-sudo -u redis redis-server /etc/redis/redis.conf --daemonize no
-
-sudo wget -O /etc/yum.repos.d/jenkins.repo \
-    https://pkg.jenkins.io/redhat-stable/jenkins.repo
-sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-sudo yum upgrade
-sudo yum install  java-17-amazon-corretto-devel -y
-sudo yum install jenkins -y
-systemctl start jenkins
-systemctl enable jenkins
-
-sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-sudo yum install -y terraform
-terraform version
-
-yum install git -y
+added an dummy health check /dummy-health to pass the health check in asg 
 
